@@ -65,7 +65,7 @@ async function start() {
                 let breakApart = msg.split(" "); //Resplit it even though we already did cause we're BALLERS
 
                 if (isNaN(breakApart[1])) {
-                    createClip(30, "Clip by " + message.data.user_name);
+                    createClip(60, "Clip by " + message.data.user_name);
                 } else {
                     createClip(breakApart[1], breakApart.slice(2).join(' '));
                 }
@@ -167,7 +167,6 @@ function sendChatMessage(message) {
         "arguments": [message]
     }));
 }
-
 
 //Startup function
 fs.exists("./authTokens.json", (exists) => {
