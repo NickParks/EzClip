@@ -1,5 +1,7 @@
 'use strict';
 
+const CURRENT_VERSION_TAG = "1.1";
+
 const { ShortCodeExpireError, OAuthClient } = require('@mixer/shortcode-oauth');
 const ws = require('ws');
 const rp = require('request-promise');
@@ -199,4 +201,20 @@ fs.exists("./authTokens.json", (exists) => {
             }
         });
     }
+});
+
+//Version checker
+rp('https://api.github.com/repos/NickParks/EzClip/releases/latest', {
+    headers: {
+        'User-Agent': "EzClip"
+    },
+    json: true
+}).then((value) => {
+    if (value.tag_name != CURRENT_VERSION_TAG) {
+        console.log('\x1b[36m%s\x1b[0m', "There is a new version available for download!");
+        console.log('\x1b[36m%s\x1b[0m', value.url);
+    }
+}).catch(err => {
+    //Error getting github
+    console.error(err);
 });
