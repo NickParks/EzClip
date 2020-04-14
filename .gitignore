@@ -1,0 +1,4 @@
+node_modules/
+authTokens.json
+EzClip.exe
+package-lock.json
