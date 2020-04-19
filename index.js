@@ -1,6 +1,6 @@
 'use strict';
 
-const CURRENT_VERSION_TAG = "1.1";
+const CURRENT_VERSION_TAG = "1.2";
 
 const { ShortCodeExpireError, OAuthClient } = require('@mixer/shortcode-oauth');
 const ws = require('ws');
@@ -14,6 +14,8 @@ const oAuthClient = new OAuthClient({
 });
 
 var token;
+var refreshToken;
+
 var socket;
 var currentUserId = -1;
 var currentChannelName = "";
@@ -74,15 +76,19 @@ async function start() {
             }
         }
     });
+
+    setInterval(() => {
+        getNewTokensFromRefresh();
+    }, 1000 * 3200); //Expiry time for token
 }
 
 ///////////////////////
 // HELPER FUNCTIONS  //
 ///////////////////////
-
 function startAttempts() {
     attempt().then(tokens => {
         token = tokens.data.accessToken;
+        refreshToken = tokens.data.refreshToken;
 
         //Write our new tokens to file
         fs.writeFile("./authTokens.json", JSON.stringify(tokens.data), (err) => {
@@ -142,7 +148,6 @@ async function createClip(length, title) {
         return;
     }
 
-
     let broadcastID = currentBroadcast.id;
     let payload = {
         "broadcastId": broadcastID,
@@ -170,6 +175,40 @@ function sendChatMessage(message) {
     }));
 }
 
+//Refresh token
+function getNewTokensFromRefresh() {
+    let queryString = {
+        grant_type: "refresh_token",
+        refresh_token: refreshToken,
+        client_id: "6a2af2fab374b9303f7d562a3a7b942d779729d831ddd852"
+    }
+
+    rp.post('https://mixer.com/api/v1/oauth/token', {
+        body: queryString,
+        json: true
+    }).then((result) => {
+        token = result.access_token;
+        refreshToken = result.refresh_token;
+
+        let tokensToWrite = {
+            accessToken: result.access_token,
+            refreshToken: result.refresh_token,
+            expires_in: result.expires_in
+        }
+
+        //Write our new tokens to file
+        fs.writeFile("./authTokens.json", JSON.stringify(tokensToWrite), (err) => {
+            if (err) {
+                console.error("Failed to write new tokens to file..");
+            }
+
+            start();
+        });
+    }).catch(err => {
+        console.error(err);
+    });
+}
+
 //Startup function
 fs.exists("./authTokens.json", (exists) => {
     if (!exists) {
@@ -195,7 +234,11 @@ fs.exists("./authTokens.json", (exists) => {
             if (parsed.accessToken != undefined) {
                 //Set tokens
                 token = parsed.accessToken;
-                start();
+                refreshToken = parsed.refreshToken;
+
+                //Get new ones
+                getNewTokensFromRefresh();
+                return;
             } else {
                 startAttempts();
             }
