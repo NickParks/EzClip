@@ -79,7 +79,7 @@ async function start() {
 
     setInterval(() => {
         getNewTokensFromRefresh();
-    }, 1000 * 3200); //Expiry time for token
+    }, 1000 * 60 * 60 * 5); //Expiry time for token
 }
 
 ///////////////////////
