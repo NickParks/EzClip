@@ -46,6 +46,14 @@ async function start() {
         console.log("Bot is ready to go! Users in your chat can now just use !clip [length] [title]");
     });
 
+    socket.on('close', () => {
+        console.log("Chat connection closed");
+    });
+
+    socket.on('error', () => {
+        console.log("Error connecting to chat");
+    });
+
     socket.on('message', (data) => {
         let message = JSON.parse(data);
 
@@ -65,13 +73,12 @@ async function start() {
         if (message.event == "ChatMessage") {
             let msg = buildMessage(message.data.message.message);
 
-            if (msg.startsWith("!clip")) {
-                let breakApart = msg.split(" "); //Resplit it even though we already did cause we're BALLERS
-
-                if (isNaN(breakApart[1])) {
-                    createClip(60, "Clip by " + message.data.user_name);
+            if (msg[0].toLowerCase() == "!clip") {
+                if (isNaN(msg[1])) {
+                    createClip(60, "Clip by " + message.data.user_name, true);
                 } else {
-                    createClip(breakApart[1], breakApart.slice(2).join(' '));
+                    //If we send an empty string to Mixer for the title they auto set the title of the clip to the stream title
+                    createClip(msg[1], msg.splice(2).join(' '), true);
                 }
             }
         }
@@ -120,16 +127,16 @@ const attempt = () =>
 
 //Build a message from the weird array mixer passes down
 function buildMessage(message) {
-    let msg = "";
+    let messageParts = [];
     for (let x = 0; x < message.length; x++) {
-        msg += message[x].text;
+        messageParts.push(message[x].text);
     }
 
-    return msg.trim();
+    return messageParts;
 }
 
 //Create the actual clip
-async function createClip(length, title) {
+async function createClip(length, title, shouldRetry) {
     //Mixer only allows clips up to 300 seconds long
     if (length >= 300) {
         length = 300;
@@ -155,15 +162,25 @@ async function createClip(length, title) {
         "clipDurationInSeconds": length
     }
 
-    let clipRequest = await rp.post('https://mixer.com/api/v1/clips/create', {
-        headers: {
-            'Authorization': 'Bearer ' + token
-        },
-        body: payload,
-        json: true
-    });
+    try {
+        let clipRequest = await rp.post('https://mixer.com/api/v1/clips/create', {
+            headers: {
+                'Authorization': 'Bearer ' + token
+            },
+            body: payload,
+            json: true
+        });
 
-    sendChatMessage(`Clip created: https://mixer.com/${currentChannelName}?clip=${clipRequest.shareableId}`);
+        sendChatMessage(`Clip created: https://mixer.com/${currentChannelName}?clip=${clipRequest.shareableId}`);
+    } catch (e) {
+        if (shouldRetry) {
+            console.log("Failed to generate clip, retrying...");
+            createClip(length, title, false);
+        } else {
+            console.log("Failed to create clip twice");
+            sendChatMessage(`Failed to generate clip`);
+        }
+    }
 }
 
 //Send a chat message over the socket
