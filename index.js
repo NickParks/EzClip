@@ -1,6 +1,6 @@
 'use strict';
 
-const CURRENT_VERSION_TAG = "1.2";
+const CURRENT_VERSION_TAG = "1.3";
 
 const { ShortCodeExpireError, OAuthClient } = require('@mixer/shortcode-oauth');
 const ws = require('ws');
