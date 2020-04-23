@@ -85,7 +85,7 @@ async function start() {
     });
 
     setInterval(() => {
-        getNewTokensFromRefresh();
+        getNewTokensFromRefresh(false);
     }, 1000 * 60 * 60 * 5); //Expiry time for token
 }
 
@@ -178,7 +178,8 @@ async function createClip(length, title, shouldRetry) {
             createClip(length, title, false);
         } else {
             console.log("Failed to create clip twice");
-            sendChatMessage(`Failed to generate clip`);
+            console.error(e);
+            sendChatMessage(`Failed to generate clip :()`);
         }
     }
 }
@@ -193,7 +194,7 @@ function sendChatMessage(message) {
 }
 
 //Refresh token
-function getNewTokensFromRefresh() {
+function getNewTokensFromRefresh(startAfter) {
     let queryString = {
         grant_type: "refresh_token",
         refresh_token: refreshToken,
@@ -219,7 +220,9 @@ function getNewTokensFromRefresh() {
                 console.error("Failed to write new tokens to file..");
             }
 
-            start();
+            if (startAfter) {
+                start();
+            }
         });
     }).catch(err => {
         console.error(err);
@@ -254,7 +257,8 @@ fs.exists("./authTokens.json", (exists) => {
                 refreshToken = parsed.refreshToken;
 
                 //Get new ones
-                getNewTokensFromRefresh();
+                getNewTokensFromRefresh(true);
+
                 return;
             } else {
                 startAttempts();
