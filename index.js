@@ -178,8 +178,7 @@ async function createClip(length, title, shouldRetry) {
             createClip(length, title, false);
         } else {
             console.log("Failed to create clip twice");
-            console.error(e);
-            sendChatMessage(`Failed to generate clip :()`);
+            sendChatMessage(`Failed to generate clip :(`);
         }
     }
 }
