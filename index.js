@@ -1,6 +1,6 @@
 'use strict';
 
-const CURRENT_VERSION_TAG = "1.3";
+const CURRENT_VERSION_TAG = "1.4";
 
 const { ShortCodeExpireError, OAuthClient } = require('@mixer/shortcode-oauth');
 const ws = require('ws');
@@ -270,7 +270,7 @@ rp('https://api.github.com/repos/NickParks/EzClip/releases/latest', {
 }).then((value) => {
     if (value.tag_name != CURRENT_VERSION_TAG) {
         console.log('\x1b[36m%s\x1b[0m', "There is a new version available for download!");
-        console.log('\x1b[36m%s\x1b[0m', value.url);
+        console.log('\x1b[36m%s\x1b[0m', value.html_url);
     }
 }).catch(err => {
     //Error getting github
