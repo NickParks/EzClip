@@ -127,12 +127,7 @@ const attempt = () =>
 
 //Build a message from the weird array mixer passes down
 function buildMessage(message) {
-    let messageParts = [];
-    for (let x = 0; x < message.length; x++) {
-        messageParts.push(message[x].text);
-    }
-
-    return messageParts;
+    return message[0].text.split(" ");
 }
 
 //Create the actual clip
